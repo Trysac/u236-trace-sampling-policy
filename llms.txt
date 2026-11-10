@@ -1,0 +1,16 @@
+# trace-sampling-policy
+
+> Tail-based trace sampling policies: ordered keep rules for errors, latency, attributes, trace-id ratio and rate limits, a bounded decision buffer and cached late-span decisions Python package `trysac-trace-sampling-policy`, import name `trace_sampling_policy`, MIT licensed,
+> Python >= 3.10, no runtime dependencies.
+
+## Docs
+
+- [README](README.md): problem, install, usage example
+- [AGENTS](AGENTS.md): commands, folder map, conventions, limits
+- [Architecture](docs/ARCHITECTURE.md): shape of the package and its public API
+- [Testing](docs/TESTING.md): how to run and extend the tests
+
+## Optional
+
+- [Stack](docs/STACK.md): tools used and discarded
+- [Changelog](CHANGELOG.md): release history
