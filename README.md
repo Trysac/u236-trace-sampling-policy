@@ -1,48 +1,64 @@
-# trace-sampling-policy
+# trysac-trace-sampling-policy
 
-[![PyPI version](https://img.shields.io/pypi/v/trysac-trace-sampling-policy)](https://pypi.org/project/trysac-trace-sampling-policy/)
-[![License: MIT](https://img.shields.io/pypi/l/trysac-trace-sampling-policy)](LICENSE)
-[![CI](https://github.com/Trysac/u236-trace-sampling-policy/actions/workflows/ci.yml/badge.svg)](https://github.com/Trysac/u236-trace-sampling-policy/actions/workflows/ci.yml)
+Tail-based trace sampling policies as a pure-Python library.
 
-Tail-based trace sampling policies: ordered keep rules for errors, latency, attributes, trace-id ratio and rate limits, a bounded decision buffer and cached late-span decisions
+[![PyPI](https://img.shields.io/pypi/v/trysac-trace-sampling-policy)](https://pypi.org/project/trysac-trace-sampling-policy/)
+[![Python](https://img.shields.io/pypi/pyversions/trysac-trace-sampling-policy)](https://pypi.org/project/trysac-trace-sampling-policy/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Problem
+`trysac-trace-sampling-policy` evaluates ordered keep rules over complete traces, with a
+bounded decision buffer and consistent decisions for spans arriving late. It is a testable,
+in-process implementation of the ideas behind the OpenTelemetry Collector's tail sampling
+processor, using only the Python standard library.
 
-Describe in two or three sentences the concrete problem this utility solves, who hits it, and what
-they do today without it. Replace this paragraph when the first real feature lands.
+## Installation
 
-## Install
-
-```sh
+```bash
 pip install trysac-trace-sampling-policy
-# or
-uv add trysac-trace-sampling-policy
 ```
 
-Requires Python 3.10 or newer. No runtime dependencies.
+Python 3.10 or later is required.
 
 ## Usage
 
 ```python
-import trace_sampling_policy
+from trace_sampling_policy import Policy, Rule, Span
 
-# normalize() trims surrounding whitespace and lower-cases the text.
-print(trace_sampling_policy.normalize("  Hello World "))  # -> "hello world"
-
-# Blank input is rejected explicitly instead of returning an empty string.
-try:
-    trace_sampling_policy.normalize("   ")
-except ValueError as exc:
-    print(f"rejected: {exc}")
+policy = Policy(
+    [
+        Rule("error"),
+        Rule("latency", min_ms=500),
+    ]
+)
+span: Span = {
+    "trace_id": "0af7651916cd43dd8448eb211c80319c",
+    "span_id": "0123456789abcdef",
+    "parent_span_id": None,
+    "name": "checkout",
+    "start_ns": 0,
+    "end_ns": 600_000_000,  # 600 ms
+    "status": "ERROR",
+    "attributes": {},
+}
+print(policy.decide([span]))  # Decision(keep=True, rule='error')
 ```
+
+## Features
+
+- **Ordered keep rules:** error, latency, attribute, probabilistic, and rate_limit.
+- **Bounded buffer:** `TailSampler` enforces `max_traces`, `max_spans_per_trace`, and
+  `max_decisions`.
+- **Consistent late-span decisions:** decided trace IDs are cached (LRU) so late spans
+  receive the same decision and are never buffered again.
+- **Injectable clock:** deterministic tests for time-based rules and decision waiting.
+- **Typed errors:** all validation failures raise `SamplingError` with code `invalid_span`
+  or `invalid_policy`.
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) and [decisions](docs/decisions/)
-- [Testing](docs/TESTING.md) and [security](docs/SECURITY.md)
-- [Project record](docs/PROJECT.md) and [stack](docs/STACK.md)
-- [Changelog](CHANGELOG.md) and [contributing guide](CONTRIBUTING.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security](docs/SECURITY.md)
 
 ## License
 
-[MIT](LICENSE) (c) 2026 Miguel Gomez
+MIT

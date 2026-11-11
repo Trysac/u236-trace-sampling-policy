@@ -1,22 +1,28 @@
-# Security notes
+# Security
 
-## Threat model
+`trysac-trace-sampling-policy` is a pure in-memory library with no network or filesystem
+operations. It does not handle secrets, credentials, or personal data beyond what a caller
+places in span attributes or trace IDs.
 
-`trysac-trace-sampling-policy` is a pure library without I/O. The main risks are:
+## Input Validation
 
-- **Supply chain**: a compromised dependency or CI action. Mitigation: no runtime dependencies,
-  Dependabot weekly updates, actions pinned to major versions, minimal workflow permissions.
-- **Leaked secrets**: tokens committed by mistake. Mitigation: `gitleaks` runs in the local gates
-  and in CI; `.env` files are git-ignored.
-- **Insecure code**: shell injection, weak hashes, unsafe deserialization. Mitigation: Ruff's
-  `S` rules in lint and a `security` gate (Bandit, high severity fails, `# nosec` ignored); fix the
-  code instead of silencing it.
-- **Untrusted input**: callers may pass hostile strings. Mitigation: validate input and fail with
-  explicit exceptions; never `eval`, `exec` or deserialize untrusted data.
+All function inputs that accept untrusted data (spans, configuration mappings) undergo
+strict validation:
 
-## Publishing
+- Trace IDs must be 32 lowercase hex characters and not all zeros.
+- Span IDs must be 16 lowercase hex characters.
+- `end_ns` must be greater than or equal to `start_ns`.
+- Attribute keys and string values have length limits.
+- Policy rules are limited in count and field constraints.
 
-Releases are published to PyPI with trusted publishing (OIDC) when available, never with a
-long-lived token stored in the repository.
+Validation failures raise `SamplingError` with a stable `code`.
 
-To report a vulnerability, see [SECURITY.md](../SECURITY.md).
+## Memory Bounds
+
+`TailSampler` enforces configurable maximums for buffered traces, spans per trace, and
+cached decisions. This prevents unbounded memory growth even under high span volume.
+
+## Logging
+
+The library uses `logging.getLogger(__name__)` and installs a `NullHandler`; it never logs
+span contents or attributes.
