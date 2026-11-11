@@ -9,4 +9,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added trace sampling policy library with ordered keep rules, bounded tail sampler, and cached late-span decisions.
 - Initial project structure from the factory utility template.
